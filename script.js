@@ -14,12 +14,12 @@ function stringToSlug(str) {
   const fromLetter = 'şğàáäâèéëêìíïîòóöôùúüûñç·/_,:;';
   const toLetter = 'sgaaaaeeeeiiiioooouuuunc------';
   for (let i = 0, l = fromLetter.length; i < l; i++) {
-      str = str.replace(new RegExp(fromLetter.charAt(i), 'g'), toLetter.charAt(i));
+    str = str.replace(new RegExp(fromLetter.charAt(i), 'g'), toLetter.charAt(i));
   }
   str = str
-      .replace(/[^a-z0-9 -]/g, '') // remove invalid chars
-      .replace(/\s+/g, '-') // collapse whitespace and replace by -
-      .replace(/-+/g, '-'); // collapse dashes
+    .replace(/[^a-z0-9 -]/g, '') // remove invalid chars
+    .replace(/\s+/g, '-') // collapse whitespace and replace by -
+    .replace(/-+/g, '-'); // collapse dashes
   return str;
 }
 (function () {
@@ -31,70 +31,85 @@ function stringToSlug(str) {
   `;
   const $button = document.createElement('div');
   $button.innerHTML =
-      '<button id="create_branch_button" style="margin-right:10px!important;background-color:#0C61FE" class="d-inline-block float-none m-0 mr-md-0 btn btn-sm btn-primary ">Create Branch From This Issue</button>';
+    '<button id="create_branch_button" style="margin-right:10px!important;background-color:#0C61FE" class="d-inline-block float-none m-0 mr-md-0 btn btn-sm btn-primary ">Create Branch</button>';
   document.querySelector('.gh-header-actions').prepend($button);
   document.querySelector('.gh-header-actions').prepend($loadingIndicator);
   // Define branch list and base branch
   const repoUrl = window.location.href.split('issues')[0];
   // Update branch lists
   fetch(`${repoUrl}/branches/all`)
-      .then((d) => d.text())
-      .then((d) => {
-          const $el = document.createElement('div');
-          $el.innerHTML = d;
-          const branchesFilterItems = $el.querySelectorAll('branch-filter-item');
-          let branches = [];
-          let options = [];
-          branchesFilterItems.forEach(element => {
-              const branch = element.getAttribute("branch");
-              branches.push(branch)
-              options.push(`<option value="${branch}">${branch}</option>`)
-          })
-          const $dropdown = document.createElement('div');
-          $dropdown.innerHTML = `Source branch:
-            <select class="form-control mr-1" id="dropdown-issue-all-branches">
+    .then((d) => d.text())
+    .then((d) => {
+      const $el = document.createElement('div');
+      $el.innerHTML = d;
+      const branchesFilterItems = $el.querySelectorAll('branch-filter-item');
+      let branches = [];
+      let options = [];
+      branchesFilterItems.forEach(element => {
+        const branch = element.getAttribute("branch");
+        branches.push(branch)
+        options.push(`<option value="${branch}">${branch}</option>`)
+      })
+      const $title = document.createElement('input');
+      $title.id = "branchname";
+      document.querySelector('.gh-header-actions').prepend($title);
+      const $type_dropdown = document.createElement('div');
+      $type_dropdown.innerHTML = `
+            <select class="form-control mr-1" id="dropdown-issue-type">
+               <option value="feature">feature</option>
+              <option value="hotfix">hotfix</option>
+            </select>
+          `
+      document.querySelector('.gh-header-actions').prepend($type_dropdown); // Adds the branches dropdown into the DOM
+      const $dropdown = document.createElement('div');
+      $dropdown.align = "right";
+      $dropdown.innerHTML = `branch:
+            <select class="form-control mr-1"  id="dropdown-issue-all-branches">
                 ${options}
             </select>
           `
-          document.querySelector('.gh-header-actions').prepend($dropdown); // Adds the branches dropdown into the DOM
-          document.getElementById("span-issue-loading-branches").outerHTML = ""; // Removes the loading indicator from the DOM
-      });
+      document.querySelector('.gh-header-show').prepend($dropdown); // Adds the branches dropdown into the DOM
+      document.getElementById("span-issue-loading-branches").outerHTML = ""; // Removes the loading indicator from the DOM
+    });
   // Attach event to button
   // Issue new branch creation command
   $button.addEventListener('click', (d) => {
-      const issueTitle = document.querySelector('.js-issue-title').innerText;
-      const issueId = window.location.pathname.split('/').pop();
-      const branchTitle = stringToSlug(`issue ${issueId}-${issueTitle}`);
-      // Selecting the source branch
-      const dropdown = document.getElementById('dropdown-issue-all-branches');
-      const selected = dropdown.options[dropdown.selectedIndex].text;
-      let branch = 'main';
-      if (selected) {
-          branch = selected;
-      }
-      fetch(`${repoUrl}refs/${branch}?source_action=disambiguate&source_controller=files`)
-          .then((d) => d.text())
-          .then((d) => {
-              const $el = document.createElement('div');
-              $el.innerHTML = d;
-              const $form = $el.querySelector('form');
-              const $name = $form.querySelector('#name');
-              $name.value = branchTitle;
-              document.body.appendChild($form);
-              $form.submit();
-          });
+    const issueTitle = document.querySelector('.js-issue-title').innerText;
+    const issueId = window.location.pathname.split('/').pop();
+    const dropdown_type = document.getElementById('dropdown-issue-type').value + '/';
+    const branchname = document.getElementById('branchname').value;
+
+    const branchTitle = `${dropdown_type}` + `${issueId}` + '_' + `${branchname}`;
+    // Selecting the source branch
+    const dropdown = document.getElementById('dropdown-issue-all-branches');
+    const selected = dropdown.options[dropdown.selectedIndex].text;
+    let branch = 'main';
+    if (selected) {
+      branch = selected;
+    }
+    fetch(`${repoUrl}refs/${branch}?source_action=disambiguate&source_controller=files`)
+      .then((d) => d.text())
+      .then((d) => {
+        const $el = document.createElement('div');
+        $el.innerHTML = d;
+        const $form = $el.querySelector('form');
+        const $name = $form.querySelector('#name');
+        $name.value = branchTitle;
+        document.body.appendChild($form);
+        $form.submit();
+      });
   });
 })();
 
-// Feature: Copy branch checkout command into clipboard 
+// Feature: Copy branch checkout command into clipboard
 (function () {
   console.log(location);
   console.log(window.location.origin + window.location.pathname);
   if (
     window.location.href ===
-      window.location.origin + window.location.pathname ||
+    window.location.origin + window.location.pathname ||
     window.location.href ===
-      window.location.origin + window.location.pathname + "/" ||
+    window.location.origin + window.location.pathname + "/" ||
     window.location.href.match("/tree/*")
   ) {
     let branchId = "main";
